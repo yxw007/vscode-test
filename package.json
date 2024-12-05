@@ -1,111 +1,71 @@
 {
-  "name": "vscode-test",
-  "displayName": "vscode-test",
-  "description": "",
+  "name": "calico-colors",
+  "description": "Calico Colors - A Webview View API Sample",
   "version": "0.0.1",
-  "engines": {
-    "vscode": "^1.95.0"
+  "publisher": "vscode-samples",
+  "private": true,
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Microsoft/vscode-extension-samples"
   },
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "extensionKind": [
+    "ui",
+    "workspace"
+  ],
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:myExtension.addRandomLog",
-    "onCommand:myExtension.sortLogsAsc",
-    "onCommand:myExtension.sortLogsDesc",
-    "onCommand:myExtension.clearLogs"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
-    "viewsContainers": {
-      "activitybar": [
-        {
-          "id": "myExtensionSidebar",
-          "title": "My Extension",
-          "icon": "resources/icon.png"
-        }
-      ]
-    },
     "views": {
-      "myExtensionSidebar": [
+      "explorer": [
         {
-          "id": "Translate.Logs",
-          "name": "Logs"
+          "type": "webview",
+          "id": "calicoColors.colorsView",
+          "name": "Calico Colors"
         }
       ]
     },
     "commands": [
       {
-        "command": "myExtension.sortLogsAsc",
-        "title": "Sort Logs Asc",
-        "icon": "$(sort-precedence)"
+        "command": "calicoColors.addColor",
+        "category": "Calico Colors",
+        "title": "Add Color"
       },
       {
-        "command": "myExtension.sortLogsDesc",
-        "title": "Sort Logs Desc",
-        "icon": "$(sort-precedence)"
-      },
-      {
-        "command": "myExtension.clearLogs",
-        "title": "Clear Logs",
-        "icon": "$(trash)"
-      },
-      {
-        "command": "myExtension.addRandomLog",
-        "title": "Add Random Log",
-        "icon": "$(add)"
+        "command": "calicoColors.clearColors",
+        "category": "Calico Colors",
+        "title": "Clear Colors",
+        "icon": "$(clear-all)"
       }
     ],
     "menus": {
       "view/title": [
         {
-          "command": "myExtension.sortLogsAsc",
-          "when": "view == logView",
-          "group": "navigation"
-        },
-        {
-          "command": "myExtension.sortLogsDesc",
-          "when": "view == logView",
-          "group": "navigation"
-        },
-        {
-          "command": "myExtension.clearLogs",
-          "when": "view == logView",
-          "group": "navigation"
-        },
-        {
-          "command": "myExtension.addRandomLog",
-          "when": "view == logView",
-          "group": "navigation"
+          "command": "calicoColors.clearColors",
+          "group": "navigation",
+          "when": "view == calicoColors.colorsView"
         }
       ]
     }
   },
   "scripts": {
-    "vscode:prepublish": "npm run package",
-    "compile": "npm run check-types && npm run lint && node esbuild.js",
-    "watch": "npm-run-all -p watch:*",
-    "watch:esbuild": "node esbuild.js --watch",
-    "watch:tsc": "tsc --noEmit --watch --project tsconfig.json",
-    "package": "npm run check-types && npm run lint && node esbuild.js --production",
-    "compile-tests": "tsc -p . --outDir out",
-    "watch-tests": "tsc -p . -w --outDir out",
-    "pretest": "npm run compile-tests && npm run compile && npm run lint",
-    "check-types": "tsc --noEmit",
-    "lint": "eslint src",
-    "test": "vscode-test"
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "lint": "eslint",
+    "watch": "tsc -w -p ./"
   },
   "devDependencies": {
-    "@types/vscode": "^1.95.0",
-    "@types/mocha": "^10.0.9",
-    "@types/node": "20.x",
-    "@typescript-eslint/eslint-plugin": "^8.10.0",
-    "@typescript-eslint/parser": "^8.7.0",
+    "@eslint/js": "^9.13.0",
+    "@stylistic/eslint-plugin": "^2.9.0",
+    "@types/vscode": "^1.73.0",
     "eslint": "^9.13.0",
-    "esbuild": "^0.24.0",
-    "npm-run-all": "^4.1.5",
-    "typescript": "^5.6.3",
-    "@vscode/test-cli": "^0.0.10",
-    "@vscode/test-electron": "^2.4.1"
+    "typescript": "^5.7.2",
+    "typescript-eslint": "^8.16.0"
   }
 }
