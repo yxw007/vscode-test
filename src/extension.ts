@@ -1,7 +1,10 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-	const logProvider = new LogProvider();
+	const logProvider = new LogProvider(context.extensionUri);
+
+	context.subscriptions.push(
+		vscode.window.registerWebviewViewProvider("Translate.Logs", logProvider));
 
 	// 注册命令以添加随机日志
 	context.subscriptions.push(
@@ -31,48 +34,97 @@ export function activate(context: vscode.ExtensionContext) {
 		})
 	);
 
-	// 创建一个左边侧边栏按钮
-	vscode.window.registerTreeDataProvider('logView', logProvider);
 }
 
 export function deactivate() { }
 
-class LogProvider implements vscode.TreeDataProvider<LogItem> {
-	private _onDidChangeTreeData: vscode.EventEmitter<LogItem | undefined | void> = new vscode.EventEmitter<LogItem | undefined | void>();
-	readonly onDidChangeTreeData: vscode.Event<LogItem | undefined | void> = this._onDidChangeTreeData.event;
+class LogProvider implements vscode.WebviewViewProvider {
+	private _view?: vscode.WebviewView;
 
-	private logs: LogItem[] = [];
+	constructor(
+		private readonly _extensionUri: vscode.Uri,
+	) { }
 
-	getTreeItem(element: LogItem): vscode.TreeItem {
-		return element;
-	}
+	resolveWebviewView(webviewView: vscode.WebviewView) {
+		this._view = webviewView;
 
-	getChildren(element?: LogItem): Thenable<LogItem[]> {
-		if (element) {
-			return Promise.resolve([]);
-		} else {
-			return Promise.resolve(this.logs);
-		}
+		webviewView.webview.options = {
+			enableScripts: true,
+			localResourceRoots: [
+				this._extensionUri
+			]
+		};
+
+		webviewView.webview.html = this.getWebviewContent(webviewView.webview);
+
+		webviewView.webview.onDidReceiveMessage(
+			message => {
+				switch (message.command) {
+					case 'sort':
+						this.sortLogs(message.order);
+						break;
+					case 'clear':
+						this.clearLogs();
+						break;
+				}
+			}
+		);
 	}
 
 	addLog(message: string) {
-		this.logs.push(new LogItem(message));
-		this._onDidChangeTreeData.fire();
+		if (this._view) {
+			this._view.webview.postMessage({ command: 'addLog', message });
+		}
 	}
 
 	sortLogs(order: 'asc' | 'desc') {
-		this.logs.sort((a, b) => order === 'asc' ? a.label.localeCompare(b.label) : b.label.localeCompare(a.label));
-		this._onDidChangeTreeData.fire();
+		if (this._view) {
+			this._view.webview.postMessage({ command: 'sort', order });
+		}
 	}
 
 	clearLogs() {
-		this.logs = [];
-		this._onDidChangeTreeData.fire();
+		if (this._view) {
+			this._view.webview.postMessage({ command: 'clear' });
+		}
+	}
+
+	private getWebviewContent(webview: vscode.Webview) {
+		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'main.js'));
+		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'media', 'reset.css'));
+		const nonce = getNonce();
+
+		return `
+            <!DOCTYPE html>
+            <html lang="en">
+            <head>
+                <meta charset="UTF-8">
+                <meta name="viewport" content="width=device-width, initial-scale=1.0">
+                <title>Translate Logs</title>
+								<link href="${styleResetUri}" rel="stylesheet">
+            </head>
+            <body>
+                <div style="display: flex; justify-content: space-between; align-items: center;">
+                    <h1>Log Panel</h1>
+                    <div>
+                        <button onclick="sortLogs('asc')">Sort Asc</button>
+                        <button onclick="sortLogs('desc')">Sort Desc</button>
+                        <button onclick="clearLogs()">Clear</button>
+                    </div>
+                </div>
+                <div id="logContainer">logContainer</div>
+                <script nonce="${nonce}" src="${scriptUri}"></script>
+            </body>
+            </html>
+        `;
 	}
 }
 
-class LogItem extends vscode.TreeItem {
-	constructor(public readonly label: string) {
-		super(label);
+function getNonce() {
+	let text = '';
+	const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
+	for (let i = 0; i < 32; i++) {
+		text += possible.charAt(Math.floor(Math.random() * possible.length));
 	}
+	return text;
 }

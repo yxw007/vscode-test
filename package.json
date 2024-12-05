@@ -9,7 +9,12 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [],
+  "activationEvents": [
+    "onCommand:myExtension.addRandomLog",
+    "onCommand:myExtension.sortLogsAsc",
+    "onCommand:myExtension.sortLogsDesc",
+    "onCommand:myExtension.clearLogs"
+  ],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -24,7 +29,7 @@
     "views": {
       "myExtensionSidebar": [
         {
-          "id": "logView",
+          "id": "Translate.Logs",
           "name": "Logs"
         }
       ]
