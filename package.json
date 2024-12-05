@@ -9,12 +9,7 @@
   "categories": [
     "Other"
   ],
-  "activationEvents": [
-    "onCommand:myExtension.addRandomLog",
-    "onCommand:myExtension.sortLogsAsc",
-    "onCommand:myExtension.sortLogsDesc",
-    "onCommand:myExtension.clearLogs"
-  ],
+  "activationEvents": [],
   "main": "./dist/extension.js",
   "contributes": {
     "viewsContainers": {
@@ -22,7 +17,7 @@
         {
           "id": "myExtensionSidebar",
           "title": "My Extension",
-          "icon": "resources/icon.png"
+          "icon": "icon.png"
         }
       ]
     },
