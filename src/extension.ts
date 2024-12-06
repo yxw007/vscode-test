@@ -1,36 +1,48 @@
 import * as vscode from 'vscode';
 
 export function activate(context: vscode.ExtensionContext) {
-	const logProvider = new LogProvider(context.extensionUri);
+	const provider = new LogProvider(context.extensionUri);
 
 	context.subscriptions.push(
-		vscode.window.registerWebviewViewProvider("Translate.Logs", logProvider));
+		vscode.window.registerWebviewViewProvider("logView", provider));
 
 	// 注册命令以添加随机日志
 	context.subscriptions.push(
 		vscode.commands.registerCommand('myExtension.addRandomLog', () => {
-			const log = `Random log entry at ${new Date().toLocaleTimeString()}`;
-			logProvider.addLog(log);
+			const log = `
+Random log entry at ${new Date().toLocaleTimeString()}
+[translate ] Translate Failed: from=auto,to=zh,engine=baidu,translate text: 
+--------------------
+Show Commit
+--------------------
+ error: Translate fail ! Translate fail ! error_code:54003, error_msg: Invalid Access Limit
+extensionHostProcess.js:162
+Translate-next: Translate fail ! error_code:54003, error_msg: Invalid Access Limit
+Error: Translate fail ! error_code:54003, error_msg: Invalid Access Limit
+    at Object.translate (e:\Project\translate-ide\vscode-extension\node_modules\@yxw007\translate\src\engines\baidu.ts:51:15)
+    at processTicksAndRejections (node:internal/process/task_queues:95:5)
+			`;
+			provider.addLog(log);
 		})
 	);
 
 	// 注册排序日志命令
 	context.subscriptions.push(
 		vscode.commands.registerCommand('myExtension.sortLogsAsc', () => {
-			logProvider.sortLogs('asc');
+			provider.sortLogs('asc');
 		})
 	);
 
 	context.subscriptions.push(
 		vscode.commands.registerCommand('myExtension.sortLogsDesc', () => {
-			logProvider.sortLogs('desc');
+			provider.sortLogs('desc');
 		})
 	);
 
 	// 注册清除日志命令
 	context.subscriptions.push(
 		vscode.commands.registerCommand('myExtension.clearLogs', () => {
-			logProvider.clearLogs();
+			provider.clearLogs();
 		})
 	);
 
@@ -39,7 +51,10 @@ export function activate(context: vscode.ExtensionContext) {
 export function deactivate() { }
 
 class LogProvider implements vscode.WebviewViewProvider {
+	public static readonly viewType = 'logView';
 	private _view?: vscode.WebviewView;
+	private _logs: string[] = [];
+	private _logOrder: 'asc' | 'desc' = 'asc';
 
 	constructor(
 		private readonly _extensionUri: vscode.Uri,
@@ -60,42 +75,40 @@ class LogProvider implements vscode.WebviewViewProvider {
 		};
 
 		webviewView.webview.html = this.getWebviewContent(webviewView.webview);
-
-		webviewView.webview.onDidReceiveMessage(
-			message => {
-				switch (message.command) {
-					case 'sort':
-						this.sortLogs(message.order);
-						break;
-					case 'clear':
-						this.clearLogs();
-						break;
-				}
-			}
-		);
+		if (this._logs.length > 0) {
+			this.postMessage();
+		}
 	}
 
 	addLog(message: string) {
-		if (this._view) {
-			this._view.webview.postMessage({ command: 'addLog', message });
-		}
+		this._logs.push(message);
+		this.postMessage();
 	}
 
 	sortLogs(order: 'asc' | 'desc') {
-		if (this._view) {
-			this._view.webview.postMessage({ command: 'sort', order });
+		if (this._logOrder === order) {
+			return;
 		}
+		this._logOrder = order;
+		this._logs.reverse();
+		this.postMessage();
 	}
 
 	clearLogs() {
+		this._logs.length = 0
+		this.postMessage();
+	}
+
+	private postMessage() {
 		if (this._view) {
-			this._view.webview.postMessage({ command: 'clear' });
+			this._view.webview.postMessage({ logs: this._logs });
 		}
 	}
 
 	private getWebviewContent(webview: vscode.Webview) {
 		const scriptUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'main.js'));
 		const styleResetUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'reset.css'));
+		const styleMainUri = webview.asWebviewUri(vscode.Uri.joinPath(this._extensionUri, 'resources', 'main.css'));
 		const nonce = getNonce();
 
 		return `
@@ -106,17 +119,10 @@ class LogProvider implements vscode.WebviewViewProvider {
                 <meta name="viewport" content="width=device-width, initial-scale=1.0">
                 <title>Translate Logs</title>
 								<link href="${styleResetUri}" rel="stylesheet">
+								<link href="${styleMainUri}" rel="stylesheet">
             </head>
             <body>
-                <div style="display: flex; justify-content: space-between; align-items: center;">
-                    <h1>Log Panel</h1>
-                    <div>
-                        <button onclick="sortLogs('asc')">Sort Asc</button>
-                        <button onclick="sortLogs('desc')">Sort Desc</button>
-                        <button onclick="clearLogs()">Clear</button>
-                    </div>
-                </div>
-                <div id="logContainer">logContainer</div>
+                <pre id="logContainer"></pre>
                 <script nonce="${nonce}" src="${scriptUri}"></script>
             </body>
             </html>

@@ -1,25 +1,19 @@
 (() => {
-
 	const vscode = acquireVsCodeApi();
-	const logs = [];
+	const _container = document.getElementById("logContainer");
 
-	function sortLogs(order) {
-		logs.sort((a, b) => order === 'asc' ? a.localeCompare(b) : b.localeCompare(a));
-		updateWebview();
+	window.addEventListener("message", event => {
+		debugger
+		const { logs } = event.data;
+		console.log("webview receive message:", logs);
+		updateWebview(logs);
+	});
+
+	function updateWebview(logs = []) {
+		if (!_container) {
+			console.error("not found logContainer");
+			return;
+		}
+		_container.innerHTML = logs.join("\n");
 	}
-
-	function clearLogs() {
-		logs.length = 0
-		updateWebview();
-	}
-
-	function addLog(message) {
-		this.logs.push(message);
-		this.updateWebview();
-	}
-
-	function updateWebview() {
-
-	}
-
 })();

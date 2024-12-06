@@ -15,17 +15,18 @@
     "viewsContainers": {
       "activitybar": [
         {
-          "id": "myExtensionSidebar",
-          "title": "My Extension",
+          "id": "translateLogs",
+          "title": "vscode-translate-next",
           "icon": "icon.png"
         }
       ]
     },
     "views": {
-      "myExtensionSidebar": [
+      "translateLogs": [
         {
-          "id": "Translate.Logs",
-          "name": "Logs"
+          "type": "webview",
+          "id": "logView",
+          "name": "logs"
         }
       ]
     },
@@ -33,12 +34,12 @@
       {
         "command": "myExtension.sortLogsAsc",
         "title": "Sort Logs Asc",
-        "icon": "$(sort-precedence)"
+        "icon": "$(arrow-up)"
       },
       {
         "command": "myExtension.sortLogsDesc",
         "title": "Sort Logs Desc",
-        "icon": "$(sort-precedence)"
+        "icon": "$(arrow-down)"
       },
       {
         "command": "myExtension.clearLogs",
